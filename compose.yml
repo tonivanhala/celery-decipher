@@ -1,0 +1,80 @@
+networks:
+  celery-decipher:
+    driver: bridge
+volumes:
+  decipher-data:
+    driver: local
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.67.0
+    container_name: decipher-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - celery-decipher
+  postgres:
+    image: postgres:17-alpine
+    container_name: decipher-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    networks:
+      - celery-decipher
+    volumes:
+      - decipher-data:/var/lib/postgresql/data
+      - ./docker/postgres/01-init.sql:/docker-entrypoint-initdb.d/init.sql
+  rabbitmq:
+    image: rabbitmq:4.0-alpine
+    container_name: decipher-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - celery-decipher
+  db-migrations:
+    image: flyway/flyway:11.5-alpine
+    container_name: db-migrations
+    volumes:
+      - ./migrations:/flyway/sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      -url=jdbc:postgresql://postgres:5432/operational
+      -user=postgres
+      -password=postgres
+      migrate
+    networks:
+      - celery-decipher
+    profiles:
+      - one-off
+  test-migrations:
+    image: flyway/flyway:11.5-alpine
+    container_name: test-migrations
+    volumes:
+      - ./migrations:/flyway/sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      -url=jdbc:postgresql://postgres:5432/operational_test
+      -user=postgres
+      -password=postgres
+      migrate
+    networks:
+      - celery-decipher
+    profiles:
+      - one-off
