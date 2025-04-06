@@ -2,4 +2,22 @@
 name = "celery-decipher"
 version = "0.1.0"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.12",
+    "psycopg[binary,pool]>=3.2.6",
+    "pydantic>=2.11.2",
+    "pydantic-settings>=2.8.1",
+    "sqlalchemy>=2.0.40",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "ruff>=0.11.4",
+]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
