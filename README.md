@@ -9,7 +9,7 @@ The stack consists of
   The app triggers a Celery pipeline which implements an evolutionary algorithm for
   deciphering the message.
 - Postgres databases for 
-  * storing operational data, includingintermediate results between tasks,
+  * storing operational data, including intermediate results between tasks,
   * a unit test database with identical schema as operational DB,
   * Celery result backend.
 - RabbitMQ as the Celery broker.
