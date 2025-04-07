@@ -4,6 +4,8 @@ networks:
 volumes:
   decipher-data:
     driver: local
+  decipher-rabbitmq:
+    driver: local
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.67.0
@@ -34,7 +36,7 @@ services:
       - decipher-data:/var/lib/postgresql/data
       - ./docker/postgres/01-init.sql:/docker-entrypoint-initdb.d/init.sql
   rabbitmq:
-    image: rabbitmq:4.0-alpine
+    image: rabbitmq:4.0-management-alpine
     container_name: decipher-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq
@@ -44,6 +46,10 @@ services:
       - "15672:15672"
     networks:
       - celery-decipher
+    volumes:
+      - decipher-rabbitmq:/var/lib/rabbitmq/
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
   db-migrations:
     image: flyway/flyway:11.5-alpine
     container_name: db-migrations
@@ -78,3 +84,24 @@ services:
       - celery-decipher
     profiles:
       - one-off
+  celery-worker:
+    build:
+      context: .
+      dockerfile: ./docker/celery/Dockerfile
+    container_name: celery-worker
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8000/healthz" ]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - celery-decipher
+    environment:
+      PG_CONNECTION_STRING: postgresql://coo:chief-of-operations@postgres:5432/operational
+      CELERY_BACKEND_URL: db+postgresql+psycopg://celery:celery@postgres:5432/celery
+      CELERY_BROKER_URL: amqp://op_user:OPERATIONAL@rabbitmq:5672/operational_vhost
+    ports:
+        - "8001:8000"
