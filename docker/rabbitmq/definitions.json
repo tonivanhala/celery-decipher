@@ -1,0 +1,38 @@
+{
+  "vhosts": [
+    {
+      "name": "operational_vhost"
+    },
+    {
+      "name": "test_vhost"
+    }
+  ],
+  "users": [
+    {
+      "name": "op_user",
+      "password_hash": "pqQpBtwiAH7Ji7Hwee8Ikn7nHoHJlOdOk8HKMfBeNg6yhmEn",
+      "tags": "management"
+    },
+    {
+      "name": "test_user",
+      "password_hash": "Z/ezTL5dm9LbCER/I9Bgu3iiMauA33KFPAEp7OWuHBTFAEDE",
+      "tags": ""
+    }
+  ],
+  "permissions": [
+    {
+      "user": "op_user",
+      "vhost": "operational_vhost",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "test_user",
+      "vhost": "test_vhost",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ]
+}
