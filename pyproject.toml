@@ -5,9 +5,11 @@ requires-python = ">=3.13"
 dependencies = [
     "celery[pytest]>=5.5.0",
     "fastapi>=0.115.12",
+    "langdetect>=1.0.9",
     "psycopg[binary,pool]>=3.2.6",
     "pydantic>=2.11.2",
     "pydantic-settings>=2.8.1",
+    "rapidfuzz>=3.13.0",
     "sqlalchemy>=2.0.40",
     "uvicorn[standard]>=0.34.0",
 ]

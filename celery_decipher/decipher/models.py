@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 DocumentID: TypeAlias = UUID
+WordLength: TypeAlias = int
 
 
 class DecipherStartRequest(BaseModel):
