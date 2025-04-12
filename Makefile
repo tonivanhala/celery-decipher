@@ -22,6 +22,7 @@ test:
 .PHONY: check
 check:
 	@uv run ruff check celery_decipher
+	@uv run basedpyright --level error
 
 .PHONY: format
 format:
