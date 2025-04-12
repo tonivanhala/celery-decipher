@@ -3,7 +3,7 @@ from typing import Iterable
 import httpx
 import psycopg
 import psycopg.rows
-from psycopg.sql import SQL, Placeholder, Identifier
+from psycopg.sql import SQL, Identifier
 import pytest
 from psycopg_pool import ConnectionPool
 
@@ -30,6 +30,7 @@ db.db_pool = testdb_pool
 
 
 DB_TABLES = [
+    "candidates",
     "decipher_sources",
     "decipher_status",
 ]

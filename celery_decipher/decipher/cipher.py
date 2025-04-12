@@ -1,6 +1,8 @@
 from typing import TypeAlias, TypeGuard
+from uuid import UUID
 
 SingleLowercaseChar: TypeAlias = str
+CandidateID: TypeAlias = UUID
 CipherMap: TypeAlias = dict[SingleLowercaseChar, SingleLowercaseChar]
 
 ALL_LETTERS = {chr(ch) for ch in range(ord("a"), ord("z") + 1)}

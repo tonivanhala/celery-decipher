@@ -1,11 +1,15 @@
 from collections import Counter
 from random import random, sample, shuffle
+from uuid import UUID
 
 from langdetect import PROFILES_DIRECTORY, DetectorFactory
+from psycopg.cursor import Cursor
+from psycopg.rows import DictRow
 from rapidfuzz.distance import Levenshtein
 from rapidfuzz.process import extractOne
 
 from celery_decipher.decipher.cipher import CipherMap, decipher
+from celery_decipher.decipher.db import get_source_text, insert_candidates
 from celery_decipher.decipher.fixtures import (
     most_common_english_bigrams,
     most_common_english_letters,
@@ -16,6 +20,11 @@ _detector_factory = DetectorFactory()
 _detector_factory.load_profile(PROFILES_DIRECTORY)
 
 MAX_ITERATIONS = 1000
+POPULATION_SIZE = 1000
+ELITE_SIZE = 20  # Keep top 20 unmodified
+NUM_RANDOM = 50  # Add 5% random
+TOURNAMENT_SIZE = 3
+MUTATION_RATE = 0.15
 
 
 def langdetect_fitness(deciphered_text: str) -> float:
@@ -135,13 +144,12 @@ def crossover(parent1: CipherMap, parent2: CipherMap) -> CipherMap:
     return child_map
 
 
-def mutate(cipher_map: CipherMap, mutation_rate: float = 0.15) -> CipherMap:
+def mutate(cipher_map: CipherMap) -> CipherMap:
     """Mutate the cipher map by swapping two mappings."""
     mutated_map = {k: v for k, v in cipher_map.items()}
     alphabet_keys = [k for k in cipher_map.keys()]
-    if random() < mutation_rate:
-        k1, k2 = sample(alphabet_keys, 2)
-        mutated_map[k1], mutated_map[k2] = mutated_map[k2], mutated_map[k1]
+    k1, k2 = sample(alphabet_keys, 2)
+    mutated_map[k1], mutated_map[k2] = mutated_map[k2], mutated_map[k1]
     return mutated_map
 
 
@@ -171,7 +179,7 @@ def get_random_cipher_map() -> CipherMap:
     return cipher_map
 
 
-def _run_tournament(
+def run_tournament(
     cipher_text: str, candidates: list[CipherMap], tournament_size: int
 ) -> CipherMap:
     """Run a tournament to select the best candidate."""
@@ -185,14 +193,9 @@ def _run_tournament(
 def run_full_solver(cipher_text: str) -> CipherMap:
     """Solve the cipher using a genetic algorithm in a single function."""
 
-    population_size = 1000
-    elite_size = 20  # Keep top 20 unmodified
-    num_random = 50  # Add 5% random
-    tournament_size = 3
-
     cipher_map = initial_guess_letter_frequencies(cipher_text)
-    candidates = [get_random_cipher_map() for _ in range(population_size - 10)]
-    candidates.extend(mutate(cipher_map, 1.0) for _ in range(10))
+    candidates = [get_random_cipher_map() for _ in range(POPULATION_SIZE - 10)]
+    candidates.extend(mutate(cipher_map) for _ in range(10))
 
     for iteration in range(MAX_ITERATIONS):
         candidates = sorted(
@@ -210,24 +213,33 @@ def run_full_solver(cipher_text: str) -> CipherMap:
 
         new_candidates = []
 
-        elite_candidates = candidates[:elite_size]
+        elite_candidates = candidates[:ELITE_SIZE]
         new_candidates.extend(elite_candidates)
 
-        num_offspring = population_size - len(new_candidates) - num_random
+        num_offspring = POPULATION_SIZE - len(new_candidates) - NUM_RANDOM
 
         for _ in range(num_offspring):
-            parent1 = _run_tournament(cipher_text, candidates, tournament_size)
-            parent2 = _run_tournament(cipher_text, candidates, tournament_size)
+            parent1 = run_tournament(cipher_text, candidates, TOURNAMENT_SIZE)
+            parent2 = run_tournament(cipher_text, candidates, TOURNAMENT_SIZE)
 
             child = crossover(parent1, parent2)
-            child = mutate(child)
+            if random() < MUTATION_RATE:
+                child = mutate(child)
 
             new_candidates.append(child)
 
-        new_candidates.extend(get_random_cipher_map() for _ in range(num_random))
+        new_candidates.extend(get_random_cipher_map() for _ in range(NUM_RANDOM))
 
         candidates = new_candidates
     candidates = sorted(
         candidates, key=lambda item: fitness(decipher(cipher_text, item)), reverse=True
     )
     return candidates[0]
+
+
+def initial_guess(cursor: Cursor[DictRow], source_text_id: UUID) -> None:
+    cipher_text = get_source_text(cursor, source_text_id)
+    cipher_map = initial_guess_letter_frequencies(cipher_text)
+    candidates = [get_random_cipher_map() for _ in range(POPULATION_SIZE - 10)]
+    candidates.extend(mutate(cipher_map) for _ in range(10))
+    insert_candidates(cursor, source_text_id, candidates)

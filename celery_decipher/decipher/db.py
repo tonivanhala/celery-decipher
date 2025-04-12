@@ -1,7 +1,9 @@
 from psycopg import Cursor
 from psycopg.rows import DictRow
-from psycopg.sql import SQL, Literal
+from psycopg.sql import SQL, Literal, Placeholder
+from psycopg.types.json import Jsonb
 
+from celery_decipher.decipher.cipher import CandidateID, CipherMap
 from celery_decipher.decipher.models import DocumentID
 
 
@@ -27,6 +29,41 @@ def get_source_text(cursor: Cursor[DictRow], source_text_id: DocumentID) -> str 
     ).format(source_text_id=Literal(source_text_id))
     result = cursor.execute(query).fetchone()
     return result["text"] if result else None
+
+
+def insert_candidates(
+    cursor: Cursor[DictRow], source_text_id: DocumentID, candidates: list[CipherMap]
+) -> None:
+    placeholders = SQL(", ").join(
+        [SQL("({})").format(SQL(", ").join([Placeholder()] * 2))] * len(candidates)
+    )
+    params = [
+        item for candidate in candidates for item in (source_text_id, Jsonb(candidate))
+    ]
+    stmt = SQL(
+        """
+        INSERT INTO candidates (source_text_id, cipher_map)
+        VALUES {placeholders}
+        """
+    ).format(placeholders=placeholders)
+    cursor.execute(stmt, params)
+
+
+def get_candidates(
+    cursor: Cursor[DictRow], source_text_id: DocumentID
+) -> list[tuple[CandidateID, CipherMap]] | None:
+    stmt = SQL(
+        """
+        SELECT candidate_id, cipher_map FROM candidates
+        WHERE source_text_id = {source_text_id}
+        """
+    ).format(source_text_id=Literal(source_text_id))
+    results = cursor.execute(stmt)
+    return (
+        [(result["candidate_id"], result["cipher_map"]) for result in results]
+        if results
+        else None
+    )
 
 
 def get_status(
