@@ -26,6 +26,8 @@ async def decipher(
     request: DecipherStartRequest,
 ) -> DecipherStartResponse:
     source_text_id = insert_source_text(cursor, request.text)
+    if source_text_id is None:
+        raise Exception("Failed to start deciphering")
     return DecipherStartResponse(source_text_id=source_text_id)
 
 
@@ -37,6 +39,8 @@ async def status(
     status = get_status(cursor, source_text_id)
     if status is None:
         text = get_source_text(cursor, source_text_id)
+        if text is None:
+            raise Exception(f"Source text with id {source_text_id} not found")
         return DecipherStatusResponse(
             source_text_id=source_text_id,
             status="PENDING",

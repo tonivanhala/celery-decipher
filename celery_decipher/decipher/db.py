@@ -5,7 +5,7 @@ from psycopg.sql import SQL, Literal
 from celery_decipher.decipher.models import DocumentID
 
 
-def insert_source_text(cursor: Cursor[DictRow], text: str) -> DocumentID:
+def insert_source_text(cursor: Cursor[DictRow], text: str) -> DocumentID | None:
     stmt = SQL(
         """
         INSERT INTO decipher_sources (text)
@@ -13,8 +13,8 @@ def insert_source_text(cursor: Cursor[DictRow], text: str) -> DocumentID:
         RETURNING source_text_id
         """
     ).format(text=text)
-    result = cursor.execute(stmt)
-    return result.fetchone()["source_text_id"]
+    result = cursor.execute(stmt).fetchone()
+    return result["source_text_id"] if result is not None else None
 
 
 def get_source_text(cursor: Cursor[DictRow], source_text_id: DocumentID) -> str | None:
@@ -42,4 +42,4 @@ def get_status(
         """
     ).format(source_text_id=Literal(source_text_id))
     result = cursor.execute(query).fetchone()
-    return result if result else None
+    return result["status"] if result else None

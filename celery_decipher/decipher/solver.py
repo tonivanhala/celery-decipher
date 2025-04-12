@@ -12,23 +12,14 @@ from celery_decipher.decipher.fixtures import (
     most_common_english_words,
 )
 
-_detector_factory = None
+_detector_factory = DetectorFactory()
+_detector_factory.load_profile(PROFILES_DIRECTORY)
 
 MAX_ITERATIONS = 1000
 
 
-def init_detect() -> DetectorFactory:
-    global _detector_factory
-    if _detector_factory is None:
-        _detector_factory = DetectorFactory()
-        _detector_factory.load_profile(PROFILES_DIRECTORY)
-    return _detector_factory
-
-
 def langdetect_fitness(deciphered_text: str) -> float:
     """How well does the deciphered text match English?"""
-    if not _detector_factory:
-        init_detect()
     detector = _detector_factory.create()
     detector.append(deciphered_text)
     probabilities = detector.get_probabilities()

@@ -3,6 +3,7 @@ from typing import Iterable
 import httpx
 import psycopg
 import psycopg.rows
+from psycopg.sql import SQL, Placeholder, Identifier
 import pytest
 from psycopg_pool import ConnectionPool
 
@@ -35,8 +36,10 @@ DB_TABLES = [
 
 
 def truncate_tables(conn: psycopg.Connection) -> None:
+    tables = SQL(", ").join([Identifier(table_name) for table_name in DB_TABLES])
     with conn.cursor() as cursor:
-        cursor.execute(f"TRUNCATE TABLE {', '.join(DB_TABLES)} CASCADE;")
+        query = SQL("TRUNCATE TABLE {tables} CASCADE;").format(tables=tables)
+        cursor.execute(query)
 
 
 @pytest.fixture()
