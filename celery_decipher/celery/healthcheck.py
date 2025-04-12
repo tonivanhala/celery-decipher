@@ -5,7 +5,7 @@
 import logging
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Tuple, Type, TypeAlias
+from typing import Tuple, TypeAlias
 
 SERVER_PORT = 8000
 SERVER_ADDRESS = ("", SERVER_PORT)

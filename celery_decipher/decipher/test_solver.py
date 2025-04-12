@@ -1,23 +1,18 @@
 from celery_decipher.decipher.cipher import (
     CAESAR_CIPHER,
     ROT13_CIPHER,
-    cipher,
-    decipher,
     is_valid_cipher_map,
 )
 from celery_decipher.decipher.fixtures import (
     CHURCHILL,
     CHURCHILL_ROT13,
     MANNERHEIM,
-    MLK,
 )
 from celery_decipher.decipher.solver import (
     crossover,
     fitness,
-    get_random_cipher_map,
     initial_guess_letter_frequencies,
     mutate,
-    run_full_solver,
     word_fitness,
 )
 
