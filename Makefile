@@ -1,7 +1,7 @@
 .PHONY: docker-up
 docker-up:
-	docker-compose up -d --wait
-	docker-compose --profile one-off up db-migrations test-migrations
+	docker-compose up -d --wait --force-recreate
+	docker-compose --profile one-off up db-migrations test-migrations --force-recreate
 
 .PHONY: docker-down
 docker-down:
@@ -16,7 +16,7 @@ stop:
 	docker-compose --profile one-off down
 
 .PHONY: test
-test:
+test: docker-up
 	@uv run pytest -v -s
 
 .PHONY: check
