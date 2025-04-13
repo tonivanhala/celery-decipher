@@ -20,6 +20,8 @@ The stack consists of
 
 `make start` starts docker containers and runs the Flask app in the shell.
 
+`uv run send_cipher.py` send a ciphered message to the Flask app.
+
 ## Stop services
 
 ```bash
