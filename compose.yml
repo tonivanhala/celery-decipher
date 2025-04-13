@@ -103,5 +103,6 @@ services:
       PG_CONNECTION_STRING: postgresql://coo:chief-of-operations@postgres:5432/operational
       CELERY_BACKEND_URL: db+postgresql+psycopg://celery:celery@postgres:5432/celery
       CELERY_BROKER_URL: amqp://op_user:OPERATIONAL@rabbitmq:5672/operational_vhost
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
     ports:
         - "8001:8000"

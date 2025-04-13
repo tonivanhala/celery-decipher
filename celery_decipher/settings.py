@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     celery_broker_url: str = (
         "amqp://op_user:OPERATIONAL@localhost:5672/operational_vhost"
     )
+    otel_exporter_otlp_endpoint: str = "http://localhost:4317"
 
 
 settings = Settings()
