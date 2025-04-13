@@ -1,7 +1,7 @@
 .PHONY: docker-up
 docker-up:
-	docker-compose up -d --wait --force-recreate
-	docker-compose --profile one-off up db-migrations test-migrations --force-recreate
+	docker-compose up -d --wait
+	docker-compose --profile one-off up db-migrations test-migrations
 
 .PHONY: docker-down
 docker-down:
