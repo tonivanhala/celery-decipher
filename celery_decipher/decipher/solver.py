@@ -268,8 +268,6 @@ def run_iteration(
     deciphered = decipher(cipher_text, candidates[0][1])
     score = fitness(deciphered)
 
-    print(score, iteration_count)
-
     upsert_decipher_status(cursor, source_text_id, "PROCESSING")
     upsert_best_candidate(
         cursor, source_text_id, candidates[0][0], candidates[0][1], score, deciphered
