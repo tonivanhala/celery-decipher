@@ -71,3 +71,11 @@ def http_client(_http_client: httpx.Client) -> Iterable[httpx.Client]:
     with testdb_pool.connection() as conn:
         truncate_tables(conn)
     yield _http_client
+
+
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': 'memory://',
+        'result_backend': 'cache+memory://'
+    }

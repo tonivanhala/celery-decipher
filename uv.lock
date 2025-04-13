@@ -150,6 +150,7 @@ dev = [
     { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "pytest-celery" },
     { name = "ruff" },
 ]
 
@@ -182,6 +183,7 @@ dev = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=0.26.0" },
+    { name = "pytest-celery", specifier = ">=1.2.0" },
     { name = "ruff", specifier = ">=0.11.4" },
 ]
 
