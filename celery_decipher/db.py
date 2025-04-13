@@ -1,4 +1,5 @@
-from typing import Iterable
+from contextlib import contextmanager
+from typing import Iterable, Iterator
 
 from psycopg import Cursor
 from psycopg.rows import DictRow, dict_row
@@ -13,6 +14,13 @@ db_pool = ConnectionPool(
 
 
 def db_cursor() -> Iterable[Cursor[DictRow]]:
+    with db_pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            yield cur
+
+
+@contextmanager
+def get_cursor() -> Iterator[Cursor[DictRow]]:
     with db_pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             yield cur
