@@ -16,7 +16,7 @@
     {
       "name": "test_user",
       "password_hash": "Z/ezTL5dm9LbCER/I9Bgu3iiMauA33KFPAEp7OWuHBTFAEDE",
-      "tags": ""
+      "tags": "management"
     }
   ],
   "permissions": [
