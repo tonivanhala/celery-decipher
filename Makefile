@@ -9,7 +9,7 @@ docker-down:
 
 .PHONY: start
 start: docker-up
-	@uv run uvicorn celery_decipher.main:app --host 0.0.0.0 --port 8000 --reload
+	@uv run uvicorn celery_decipher.main:app --host 0.0.0.0 --port 8000
 
 .PHONY: stop
 stop:
