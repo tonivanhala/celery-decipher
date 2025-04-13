@@ -43,7 +43,9 @@ def insert_candidates(
         [SQL("({})").format(SQL(", ").join([Placeholder()] * 2))] * len(candidates)
     )
     params = [
-        item for candidate in candidates for item in (source_text_id, Jsonb(candidate))
+        item
+        for candidate in candidates
+        for item in (str(source_text_id), Jsonb(candidate))
     ]
     stmt = SQL(
         """
@@ -52,6 +54,20 @@ def insert_candidates(
         """
     ).format(placeholders=placeholders)
     cursor.execute(stmt, params)
+
+
+def replace_candidates(
+    cursor: Cursor[DictRow], source_text_id: DocumentID, candidates: list[CipherMap]
+) -> None:
+    cursor.execute(
+        SQL(
+            """
+            DELETE FROM candidates
+            WHERE source_text_id = {source_text_id}
+            """
+        ).format(source_text_id=Literal(source_text_id))
+    )
+    insert_candidates(cursor, source_text_id, candidates)
 
 
 def get_candidates(
@@ -63,12 +79,34 @@ def get_candidates(
         WHERE source_text_id = {source_text_id}
         """
     ).format(source_text_id=Literal(source_text_id))
-    results = cursor.execute(stmt)
-    return (
-        [(result["candidate_id"], result["cipher_map"]) for result in results]
-        if results
-        else None
+    results = cursor.execute(stmt).fetchall()
+    return [(result["candidate_id"], result["cipher_map"]) for result in results]
+
+
+def upsert_best_candidate(
+    cursor: Cursor[DictRow],
+    source_text_id: DocumentID,
+    candidate_id: CandidateID,
+    cipher_map: CipherMap,
+    score: float,
+    deciphered_text: str,
+) -> None:
+    stmt = SQL(
+        """
+        INSERT INTO best_candidates (source_text_id, candidate_id, cipher_map, score, deciphered_text)
+        VALUES ({source_text_id}, {candidate_id}, {cipher_map}, {score}, {deciphered_text})
+        ON CONFLICT (source_text_id) DO UPDATE
+        SET candidate_id = {candidate_id}, cipher_map = {cipher_map}, score = {score}, deciphered_text = {deciphered_text}
+        """
+    ).format(
+        source_text_id=Literal(source_text_id),
+        candidate_id=Literal(candidate_id),
+        cipher_map=Literal(Jsonb(cipher_map)),
+        score=Literal(score),
+        deciphered_text=Literal(deciphered_text),
     )
+    cursor.execute(stmt)
+    cursor.connection.commit()
 
 
 def get_status(
@@ -87,3 +125,22 @@ def get_status(
     result = cursor.execute(query).fetchone()
     return result if result else None
 
+
+def upsert_decipher_status(
+    cursor: Cursor[DictRow],
+    source_text_id: DocumentID,
+    status: DecipherStatus,
+) -> None:
+    stmt = SQL(
+        """
+        INSERT INTO decipher_status (source_text_id, status)
+        VALUES ({source_text_id}, {status})
+        ON CONFLICT (source_text_id) DO UPDATE
+        SET status = {status}, updated_at = NOW()
+        """
+    ).format(
+        source_text_id=Literal(source_text_id),
+        status=Literal(status),
+    )
+    cursor.execute(stmt)
+    cursor.connection.commit()

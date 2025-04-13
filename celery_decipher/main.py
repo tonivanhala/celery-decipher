@@ -5,8 +5,11 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from starlette.requests import Request
 
+from celery_decipher.celery.app import app as celery_app
 from celery_decipher.db import db_pool
 from celery_decipher.decipher.routes import router as decipher_routes
+
+celery_app.set_default()
 
 
 @asynccontextmanager

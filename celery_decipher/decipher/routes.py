@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from psycopg import Cursor
 from psycopg.rows import DictRow
 
+from celery_decipher.celery.tasks import decipher_text
 from celery_decipher.db import db_cursor
 from celery_decipher.decipher.db import (
     get_source_text,
@@ -28,6 +29,7 @@ async def decipher(
     source_text_id = insert_source_text(cursor, request.text)
     if source_text_id is None:
         raise Exception("Failed to start deciphering")
+    decipher_text().apply_async(args=(source_text_id,))
     return DecipherStartResponse(source_text_id=source_text_id)
 
 

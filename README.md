@@ -18,9 +18,7 @@ The stack consists of
 
 ## Running the project
 
-```bash
-make start
-```
+`make start` starts docker containers and runs the Flask app in the shell.
 
 ## Stop services
 

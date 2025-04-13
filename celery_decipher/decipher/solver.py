@@ -9,7 +9,14 @@ from rapidfuzz.distance import Levenshtein
 from rapidfuzz.process import extractOne
 
 from celery_decipher.decipher.cipher import CipherMap, decipher
-from celery_decipher.decipher.db import get_source_text, insert_candidates
+from celery_decipher.decipher.db import (
+    get_candidates,
+    get_source_text,
+    insert_candidates,
+    replace_candidates,
+    upsert_best_candidate,
+    upsert_decipher_status,
+)
 from celery_decipher.decipher.fixtures import (
     most_common_english_bigrams,
     most_common_english_letters,
@@ -243,3 +250,55 @@ def initial_guess(cursor: Cursor[DictRow], source_text_id: UUID) -> None:
     candidates = [get_random_cipher_map() for _ in range(POPULATION_SIZE - 10)]
     candidates.extend(mutate(cipher_map) for _ in range(10))
     insert_candidates(cursor, source_text_id, candidates)
+
+
+def run_iteration(
+    cursor: Cursor[DictRow], source_text_id: UUID, iteration_count: int
+) -> bool:
+    cipher_text = get_source_text(cursor, source_text_id)
+    candidates = get_candidates(cursor, source_text_id)
+    if candidates is None:
+        raise RuntimeError(f"Can't find candidates for source text {source_text_id}")
+
+    candidates = sorted(
+        candidates,
+        key=lambda item: fitness(decipher(cipher_text, item[1])),
+        reverse=True,
+    )
+    deciphered = decipher(cipher_text, candidates[0][1])
+    score = fitness(deciphered)
+
+    print(score, iteration_count)
+
+    upsert_decipher_status(cursor, source_text_id, "PROCESSING")
+    upsert_best_candidate(
+        cursor, source_text_id, candidates[0][0], candidates[0][1], score, deciphered
+    )
+
+    if score > 0.975 or iteration_count > MAX_ITERATIONS:
+        upsert_decipher_status(cursor, source_text_id, "COMPLETED")
+        return False
+
+    new_candidates: list[CipherMap] = []
+
+    candidates = [c[1] for c in candidates]
+    elite_candidates = candidates[:ELITE_SIZE]
+    new_candidates.extend(elite_candidates)
+
+    num_offspring = POPULATION_SIZE - len(new_candidates) - NUM_RANDOM
+
+    for _ in range(num_offspring):
+        parent1 = run_tournament(cipher_text, candidates, TOURNAMENT_SIZE)
+        parent2 = run_tournament(cipher_text, candidates, TOURNAMENT_SIZE)
+
+        child = crossover(parent1, parent2)
+        if random() < MUTATION_RATE:
+            child = mutate(child)
+
+        new_candidates.append(child)
+
+    new_candidates.extend(get_random_cipher_map() for _ in range(NUM_RANDOM))
+
+    replace_candidates(cursor, source_text_id, new_candidates)
+
+    return True
