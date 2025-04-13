@@ -20,6 +20,8 @@ class DecipherStatusResponse(BaseModel):
     source_text_id: DocumentID
     status: Literal["PENDING", "PROCESSING", "COMPLETED"]
     source_text: str
+    cipher_map: dict[str, str] | None = None
+    score: float | None = None
     deciphered_text: str | None = None
     started_at: datetime | None = None
     updated_at: datetime | None = None

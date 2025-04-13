@@ -30,6 +30,7 @@ db.db_pool = testdb_pool
 
 
 DB_TABLES = [
+    "best_candidates",
     "candidates",
     "decipher_sources",
     "decipher_status",

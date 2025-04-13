@@ -1,3 +1,6 @@
+from typing import Literal as TLiteral
+from typing import TypeAlias
+
 from psycopg import Cursor
 from psycopg.rows import DictRow
 from psycopg.sql import SQL, Literal, Placeholder
@@ -5,6 +8,8 @@ from psycopg.types.json import Jsonb
 
 from celery_decipher.decipher.cipher import CandidateID, CipherMap
 from celery_decipher.decipher.models import DocumentID
+
+DecipherStatus: TypeAlias = TLiteral["PENDING", "PROCESSING", "COMPLETED"]
 
 
 def insert_source_text(cursor: Cursor[DictRow], text: str) -> DocumentID | None:
@@ -69,14 +74,16 @@ def get_candidates(
 def get_status(
     cursor: Cursor[DictRow],
     source_text_id: DocumentID,
-) -> str | None:
+) -> dict[str, str] | None:
     query = SQL(
         """
-        SELECT source_text_id, status, started_at, updated_at
+        SELECT source_text_id, ss.text AS source_text, status, started_at, updated_at, bcs.cipher_map, bcs.score, bcs.deciphered_text
         FROM decipher_status
-        JOIN decipher_sources USING(source_text_id)
+        JOIN decipher_sources ss USING(source_text_id)
+        LEFT JOIN best_candidates bcs USING(source_text_id)
         WHERE source_text_id = {source_text_id}
         """
     ).format(source_text_id=Literal(source_text_id))
     result = cursor.execute(query).fetchone()
-    return result["status"] if result else None
+    return result if result else None
+
