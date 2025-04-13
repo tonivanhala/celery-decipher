@@ -15,7 +15,7 @@ class TestSettings(Settings):
     pg_connection_string: str = (
         "postgresql://coo:chief-of-operations@localhost:5432/operational_test"
     )
-    celery_backend_url: str = "db+postgresql://celery_test:celery_test@localhost:5432/celery_test"
+    celery_backend_url: str = "db+postgresql+psycopg://celery_test:celery_test@localhost:5432/celery_test"
     celery_broker_url: str = (
         "amqp://test_user:TEST@localhost:5672/test_vhost"
     )
