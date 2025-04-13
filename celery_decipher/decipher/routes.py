@@ -36,8 +36,8 @@ async def status(
     cursor: Annotated[Cursor[DictRow], Depends(db_cursor)],
     source_text_id: UUID,
 ) -> DecipherStatusResponse:
-    status = get_status(cursor, source_text_id)
-    if status is None:
+    decipher_status = get_status(cursor, source_text_id)
+    if decipher_status is None:
         text = get_source_text(cursor, source_text_id)
         if text is None:
             raise Exception(f"Source text with id {source_text_id} not found")
@@ -46,4 +46,4 @@ async def status(
             status="PENDING",
             source_text=text,
         )
-    return DecipherStatusResponse.model_validate(status)
+    return DecipherStatusResponse.model_validate(decipher_status)
