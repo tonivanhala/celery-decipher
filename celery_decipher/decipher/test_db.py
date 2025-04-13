@@ -1,4 +1,8 @@
-from celery_decipher.decipher.db import get_candidates, get_source_text, insert_source_text
+from celery_decipher.decipher.db import (
+    get_candidates,
+    get_source_text,
+    insert_source_text,
+)
 from celery_decipher.decipher.solver import (
     POPULATION_SIZE,
     initial_guess,

@@ -46,4 +46,3 @@ def test_mutate():
 def test_initial_guess_letter_frequencies():
     cipher_map = initial_guess_letter_frequencies(CHURCHILL_ROT13)
     assert is_valid_cipher_map(cipher_map)
-
